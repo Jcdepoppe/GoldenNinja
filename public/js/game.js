@@ -1,3 +1,4 @@
+
 var config = {
   type: Phaser.AUTO,
   parent: "phaser-example",
@@ -21,6 +22,10 @@ var game = new Phaser.Game(config);
 var player;
 var score;
 
+var coins;
+var coinAmount = 5;
+
+
 const width = 1350;
 const height = 854;
 
@@ -33,18 +38,25 @@ function preload() {
     "otherPlayer",
     "assets//128x128/Front - Walking/Front - Walking_000.png"
   );
+  this.load.image(
+    "coin",
+    "assets//CoinsByLexassets/PNG/GOLD/SMALL/SMALL_0000_Capa-1.png"
+  )
   this.load.image("farm", "assets/farm.png");
   this.load.image("cave", "assets/cave3.jpg");
   this.load.image("casino", "assets/casino.png");
   this.load.image("village", "assets/village.png");
 }
 
+
+//------------------------------------------------------------------------------\\
+//------------------------------------------------------------------------------\\
 function create() {
   var self = this;
   this.socket = io();
 
-  //World Creation
-  //Each image will be 1350 pixels wide, and 854 pixels long
+  // World Creation
+  // Each image will be 1350 pixels wide, and 854 pixels long
   //   var width = 1024;
   //   var length = 786;
   //   var farm = this.add.image(0, 0, "farm").setOrigin(0);
@@ -93,7 +105,9 @@ function create() {
   //Camera set up
   this.cameras.main.setBounds(0, 0, width * 2, height * 2);
 
+  //Other player group  
   this.otherPlayers = this.physics.add.group();
+
   this.socket.on("currentPlayers", function(players) {
     Object.keys(players).forEach(function(id) {
       if (players[id].playerId === self.socket.id) {
@@ -106,6 +120,19 @@ function create() {
   this.socket.on("newPlayer", function(playerInfo) {
     addOtherPlayers(self, playerInfo);
   });
+
+
+  //coin group
+  this.coins = this.physics.add.group();
+
+  //Listening for coins
+  this.socket.on("coinLocations", function(coinInfo){
+    Object.keys(coinInfo).forEach(function(coinId) {
+      addCoin(self, coinInfo[coinId]);
+    });
+  });
+
+  //Listening for Disconnect
   this.socket.on("disconnect", function(playerId) {
     self.otherPlayers.getChildren().forEach(function(otherPlayer) {
       if (playerId === otherPlayer.playerId) {
@@ -128,6 +155,9 @@ function create() {
   text = this.add.text(32, 32).setScrollFactor(0).setFontSize(64).setColor('#000000');
 }
 
+
+// ---------------------------------------------------------------------------- \\
+//-----------------------------------------------------------------------------\\
 function update() {
   if (this.ninja) {
     this.cameras.main.startFollow(player);
@@ -189,4 +219,14 @@ function addOtherPlayers(self, playerInfo) {
     .setDisplaySize(53, 40);
   otherPlayer.playerId = playerInfo.playerId;
   self.otherPlayers.add(otherPlayer);
+}
+
+function addCoin(self, coinInfo) {
+  console.log("Creating Coin....");
+  const coin = self.add
+    .sprite(coinInfo.x, coinInfo.y, "coin")
+    .setOrigin(0.5, 0.5);
+    // .setDisplaySize(53, 40);
+  coin.coinId = coinInfo.coinId;
+  self.coins.add(coin);
 }

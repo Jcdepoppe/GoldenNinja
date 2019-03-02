@@ -5,8 +5,20 @@ var server = require("http").Server(app);
 var io = require("socket.io").listen(server);
 
 var players = {};
+var coins = {};
+//Amount of coins to spawn
+var coinAmount = 30;
 
 app.use(express.static(__dirname + "/public"));
+
+//Add coins to the coin object
+for(var i = 0; i < coinAmount; i++){
+  coins[i] = {
+    x: Math.floor(Math.random() * 700) + 50,
+    y: Math.floor(Math.random() * 500) + 50,
+    coinId: i
+  }
+}
 
 io.on("connection", function(socket) {
   console.log("a user connected");
@@ -20,6 +32,10 @@ io.on("connection", function(socket) {
   socket.emit("currentPlayers", players);
   // update all other players of the new player
   socket.broadcast.emit("newPlayer", players[socket.id]);
+
+  // send coins object to new player
+  socket.emit("coinLocations", coins);
+
   socket.on("disconnect", function() {
     console.log("user disconnected");
     // remove this player from our players object
